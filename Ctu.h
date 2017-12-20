@@ -141,6 +141,7 @@ typedef struct {
 #include "Nxo.h"
 #include "IpcBridge.h"
 #include "GdbStub.h"
+#include "Timeouts.h"
 
 template<unsigned long N>
 void hexdump(shared_ptr<array<uint8_t, N>> buf, unsigned long count=N) {
@@ -207,6 +208,7 @@ public:
 	Svc svc;
 	Ipc ipc;
 	ThreadManager tm;
+	TimeoutManager timeouts;
 	IpcBridge bridge;
 	GdbStub gdbStub;
 

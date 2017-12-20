@@ -2,7 +2,7 @@
 
 LogLevel g_LogLevel = Info;
 
-Ctu::Ctu() : cpu(this), svc(this), ipc(this), tm(this), mmiohandler(this), bridge(this), gdbStub(this), handleId(0xde00), heapsize(0x0) {
+Ctu::Ctu() : cpu(this), svc(this), ipc(this), tm(this), mmiohandler(this), bridge(this), gdbStub(this), timeouts(this), handleId(0xde00), heapsize(0x0) {
 	handles[0xffff8001] = make_shared<Process>(this);
 }
 
@@ -13,6 +13,8 @@ void Ctu::execProgram(gptr ep) {
 	cpu.map(sp - ss, ss);
 	mmiohandler.MMIOInitialize();
 	cpu.setMmio(&mmiohandler);
+
+	timeouts.start();
 
 	auto mainThread = tm.create(ep, sp);
 	mainThread->regs.X1 = mainThread->handle;

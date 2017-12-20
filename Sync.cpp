@@ -1,6 +1,6 @@
 #include "Ctu.h"
 
-Waitable::Waitable() : presignaled(false), canceled(false) {
+Waitable::Waitable() : presignaled(false), canceled(false), idx(1) {
 }
 
 void Waitable::acquire() {
@@ -11,16 +11,24 @@ void Waitable::release() {
 	lock.unlock();
 }
 
-void Waitable::wait(function<int()> cb) {
-	wait([cb](auto _) { return cb(); });
+int Waitable::wait(function<int()> cb) {
+	return wait([cb](auto _) { return cb(); });
 }
 
-void Waitable::wait(function<int(bool)> cb) {
+int Waitable::wait(function<int(bool)> cb) {
 	acquire();
+	int curidx = idx++;
 	if(!presignaled || (presignaled && cb(canceled) == 0))
-		waiters.push_back(cb);
+		waiters.insert({ idx, cb });
 	presignaled = false;
 	canceled = false;
+	release();
+	return curidx;
+}
+
+void Waitable::unwait(int id) {
+	acquire();
+	waiters.erase(id);
 	release();
 }
 
@@ -31,7 +39,7 @@ void Waitable::signal(bool one) {
 	else {
 		auto realhit = false;
 		for(auto iter = waiters.begin(); iter != waiters.end();) {
-			auto res = (*iter)(canceled);
+			auto res = (*iter).second(canceled);
 			if(res != 0) {
 				iter = waiters.erase(iter);
 			} else {

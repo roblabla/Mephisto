@@ -219,8 +219,10 @@ guint Svc::SleepThread(guint ns) {
 	auto thread = ctu->tm.current();
 	// Yield, at least.
 	thread->suspend([=] {
-		thread->resume([=] {
+		int timeoutidx = ctu->timeouts.create(ns, [=] () {
+			thread->resume([=] {
 				thread->regs.X0 = 0;
+			});
 		});
 	});
 	return 0;
@@ -352,6 +354,7 @@ guint Svc::LockMutex(ghandle curthread, gptr mutexAddr, ghandle reqthread) {
 		mutex->hasWaiters(true);
 		thread->suspend([=] {
 			mutex->wait([=] {
+				LOG_DEBUG(Svc[0x1A], "Mutex signaled !");
 				if(mutex->owner() == 0) {
 					mutex->owner(reqthread);
 					thread->resume([=] {
@@ -405,16 +408,31 @@ guint Svc::WaitProcessWideKeyAtomic(gptr mutexAddr, gptr semaAddr, ghandle threa
 
 	auto thread = ctu->getHandle<Thread>(threadHandle);
 	thread->suspend([=] {
-		semaphore->wait([=] {
+		shared_ptr<int> semaphoreidx = make_shared<int>(0);
+
+		// CreateTimeout will *never* timeout right away, it will always wait
+		// at least for a yield.
+		int timeoutidx = ctu->timeouts.create(timeout, [=] () mutable {
+			LOG_DEBUG(TimeoutManager, "Unwaiting semaphore %lu id %d", semaAddr, *semaphoreidx);
+			semaphore->unwait(*semaphoreidx);
+			thread->resume([=] {
+				thread->regs.X0 = 0xEA01;
+			});
+		});
+
+		*semaphoreidx = semaphore->wait([=] {
+			LOG_DEBUG(TimeoutManager, "Untimeouting timeout %lu id %d", semaAddr, timeoutidx);
+			ctu->timeouts.done(timeoutidx);
+
 			semaphore->decrement();
 			thread->resume([=] {
 				thread->regs.X0 = LockMutex(0, mutexAddr, threadHandle);
 			});
 			return 1;
 		});
+		mutex->guestRelease();
 	});
 
-	mutex->guestRelease();
 	return 0;
 }
 
