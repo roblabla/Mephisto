@@ -222,13 +222,15 @@ void ThreadManager::next(bool force) {
 					return;
 				}
 			}
-			if(_current == nullptr) {
+			if(_current == nullptr &&
+					running.size() == 0 &&
+					ctu->timeouts.is_empty()) {
 				if(first) {
 					LOG_DEBUG(Thread, "No threads left to run!");
 					ctu->bridge.start();
 				}
 				first = false;
-			} else
+			} else if (_current != nullptr)
 				return;
 			usleep(50);
 			continue;

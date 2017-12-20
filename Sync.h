@@ -9,8 +9,9 @@ public:
 	void acquire();
 	void release();
 
-	void wait(function<int()> cb);
-	virtual void wait(function<int(bool)> cb);
+	int wait(function<int()> cb);
+	virtual int wait(function<int(bool)> cb);
+	void unwait(int id);
 
 	void signal(bool one=false);
 	void cancel();
@@ -22,15 +23,17 @@ protected:
 
 private:
 	recursive_mutex lock;
-	list<function<int(bool)>> waiters;
+	unordered_map<int, function<int(bool)>> waiters;
+	int idx;
 	bool presignaled, canceled;
 };
 
 class InstantWaitable : public Waitable {
 public:
-	virtual void wait(function<int(bool)> cb) {
-		Waitable::wait(cb);
+	virtual int wait(function<int(bool)> cb) {
+		int res = Waitable::wait(cb);
 		signal(true);
+		return res;
 	}
 };
 
