@@ -1,6 +1,6 @@
 #include "Ctu.h"
 
-LogLevel g_LogLevel = Info;
+LogLevel g_LogLevel = Debug;
 
 Ctu::Ctu() : cpu(this), svc(this), ipc(this), tm(this), mmiohandler(this), bridge(this), gdbStub(this), handleId(0xde00), heapsize(0x0) {
 	handles[0xffff8001] = make_shared<Process>(this);

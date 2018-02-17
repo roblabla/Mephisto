@@ -74,6 +74,15 @@ IpcData IpcBridge::readdata() {
 	return IpcData(bufptr, size);
 }
 
+void IpcBridge::writeBuffer() {
+	auto addr = readint();
+	auto size = readint();
+	auto buf = new uint8_t[size];
+	recv(client, buf, size, 0);
+	LOG_DEBUG(IpcBridge, "Writing to 0x%lu (%lu bytes)", addr, size);
+	ctu->cpu.writemem(addr, buf, size);
+}
+
 void IpcBridge::writeint(uint64_t val) {
 	send(client, &val, 8, 0);
 }
@@ -150,6 +159,9 @@ void IpcBridge::run() {
 			for(auto [hnd, _] : openHandles)
 				ctu->deleteHandle(hnd);
 			openHandles.clear();
+			for(auto [addr, size] : activeMappings)
+				ctu->cpu.unmap(addr, size);
+			activeMappings.clear();
 			return;
 		}
 		switch(cmd) {
@@ -207,6 +219,30 @@ void IpcBridge::run() {
 				auto ret = obj->messageSync(packed, close);
 				sendResponse(hnd, ret, close, packed, msg);
 			}
+			break;
+		}
+		case 5: { // Map
+			gptr map_addr = readint();
+			uint64_t map_size = readint();
+			ctu->cpu.map(map_addr, map_size);
+			activeMappings[map_addr] = map_size;
+			break;
+		}
+		case 6: { // Unmap
+			gptr unmap_addr = readint();
+			uint64_t unmap_size = readint();
+			ctu->cpu.unmap(unmap_addr, unmap_size);
+			activeMappings.erase(unmap_addr);
+			break;
+		}
+		case 7: { // write
+			writeBuffer();
+			break;
+		}
+		case 8: { // Memdump
+			gptr mem_addr = readint();
+			uint64_t mem_size = readint();
+			ctu->cpu.dumpmem(mem_addr, mem_size);
 			break;
 		}
 		default:

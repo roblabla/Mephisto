@@ -478,8 +478,8 @@ guint Svc::SendSyncRequestEx(gptr buf, guint size, ghandle handle) {
 }
 
 tuple<guint, guint> Svc::GetProcessID(ghandle handle) {
-	LOG_DEBUG(Svc[0x24], "GetProcessID 0x%x", handle);
-	return make_tuple(0, 0);
+	LOG_DEBUG(Svc[0x24], "GetProcessID 0x%x LR: 0x%lx", handle, ctu->cpu.reg(30));
+	return make_tuple(0, 0xA);
 }
 
 tuple<guint, guint> Svc::GetThreadId() {
@@ -526,7 +526,7 @@ tuple<guint, guint> Svc::GetInfo(guint id1, ghandle handle, guint id2) {
 	matchpair(14, 0, ctu->loadbase);
 	matchpair(15, 0, ctu->loadsize);
 	matchpair(18, 0, 0x0100000000000036); // Title ID
-	matchone(11, 0);
+	matchone(11, 0); // PRNG
 
 	LOG_ERROR(Svc[0x29], "Unknown getinfo");
 }
@@ -652,7 +652,9 @@ guint Svc::UnmapDeviceAddressSpace(guint unk0, ghandle phandle, gptr maddr, guin
 }
 
 guint Svc::MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x74], "MapProcessMemory");
+	LOG_DEBUG(Svc[0x74], "MapProcessMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
+
+	// XXX: TOTALLY WRONG BUT BETTER THAN BEFORE
 	ctu->cpu.map(dstaddr, size);
 	char *mem = (char *) malloc(size);
 	memset(mem, 0, size);
@@ -663,19 +665,24 @@ guint Svc::MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint si
 }
 
 guint Svc::UnmapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x75], "UnmapProcessMemory");
+	LOG_DEBUG(Svc[0x75], "UnmapProcessMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
 	ctu->cpu.unmap(dstaddr, size);
 	return 0;
 }
 
 guint Svc::MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x77], "MapProcessCodeMemory");
+	LOG_DEBUG(Svc[0x77], "MapProcessCodeMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
 	ctu->cpu.map(dstaddr, size);
+	char *mem = (char *) malloc(size);
+	memset(mem, 0, size);
+	ctu->cpu.readmem(srcaddr, mem, size);
+	ctu->cpu.writemem(dstaddr, mem, size);
+	free(mem);
 	return 0;
 }
 
 guint Svc::UnmapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x78], "UnmapProcessCodeMemory");
+	LOG_DEBUG(Svc[0x78], "UnmapProcessCodeMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
 	ctu->cpu.unmap(dstaddr, size);
 	return 0;
 }

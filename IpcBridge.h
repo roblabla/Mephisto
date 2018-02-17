@@ -138,7 +138,7 @@ public:
 
 private:
 	void run();
-
+	void writeBuffer();
 	uint64_t readint();
 	uint64_t readint(bool &closed);
 	template<typename T>
@@ -163,6 +163,8 @@ private:
 	int client;
 
 	unordered_map<ghandle, shared_ptr<KObject>> openHandles;
+	unordered_map<gptr, uint64_t> activeMappings;
+
 	gptr buffers[24];
 	int bufferOff;
 	bool waitingForAsync;

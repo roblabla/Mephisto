@@ -123,6 +123,30 @@ class Client(object):
 		self.writeint(1)
 		self.writeint(handle)
 
+	def map(self, address, size):
+		print 'Mapping 0x%x (%i bytes)' % (address, size)
+		self.writeint(5)
+		self.writeint(address)
+		self.writeint(size)
+
+	def unmap(self, address, size):
+		print 'Unmapping 0x%x (%i bytes)' % (address, size)
+		self.writeint(6)
+		self.writeint(address)
+		self.writeint(size)
+
+	def memdump(self, address, size):
+		print 'Asking memdump oif 0x%x (%i bytes)' % (address, size)
+		self.writeint(8)
+		self.writeint(address)
+		self.writeint(size)
+
+	def write(self, address, data):
+		print 'Asking write to 0x%x (%i bytes)' % (address, len(data))
+		self.writeint(7)
+		self.writeint(address)
+		self.writedata(data)
+
 	def ipcMsg(self, cmdId):
 		return IPCMessage(cmdId, client=self)
 
