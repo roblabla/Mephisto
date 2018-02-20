@@ -105,6 +105,13 @@ void runLisp(Ctu &ctu, const string &dir, shared_ptr<Atom> code) {
 		auto raddr = addr->numVal;
 		auto lfn = dir + "/" + fn->strVal;
 		loadNso(ctu, lfn, raddr);
+	} else if (head->strVal == "load-nro") {
+		assert(code->children.size() == 3);
+		auto fn = code->children[1], addr = code->children[2];
+		assert(fn->type == String && addr->type == Number);
+		auto raddr = addr->numVal;
+		auto lfn = dir + "/" + fn->strVal;
+		loadNro(ctu, lfn, raddr);
 	} else if(head->strVal == "load-kip") {
 		assert(code->children.size() == 3);
 		auto fn = code->children[1], addr = code->children[2];
@@ -115,7 +122,15 @@ void runLisp(Ctu &ctu, const string &dir, shared_ptr<Atom> code) {
 	} else if(head->strVal == "run-from") {
 		assert(code->children.size() == 2 && code->children[1]->type == Number);
 		ctu.execProgram(code->children[1]->numVal);
-	} else
+	} else if (head->strVal == "enable-sockets") {
+		ctu.socketsEnabled  = true;
+	} else if (head->strVal == "enable-gdb") {
+		uint16_t port = 24689;
+		if (code->children.size() == 2 && code->children[1]->type == Number)
+			port = (uint16_t)code->children[1]->numVal;
+		ctu.gdbStub.enable(port);
+	}
+	else
 		LOG_ERROR(Main, "Unknown function in load script: '%s'", head->strVal.c_str());
 }
 
