@@ -117,15 +117,14 @@ void Cpu::stop() {
 	CHECKED(uc_emu_stop(uc));
 }
 
-bool Cpu::map(gptr addr, guint size) {
+bool Cpu::map(gptr addr, guint size, uint32_t perms) {
 	auto temp = new uint8_t[size];
 	memset(temp, 0, size);
-	return this->map_ptr(addr, size, temp);
+	return this->map_ptr(addr, size, temp, perms);
 }
 
-bool Cpu::map_ptr(gptr addr, guint size, void *data)
-{
-	CHECKED(uc_mem_map_ptr(uc, addr, size, UC_PROT_ALL, data));
+bool Cpu::map_ptr(gptr addr, guint size, void *data, uint32_t perms) {
+	CHECKED(uc_mem_map_ptr(uc, addr, size, perms, data));
 	return ctu->newMapping(addr, data);;
 }
 

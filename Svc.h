@@ -39,7 +39,7 @@ private:
 	guint GetCurrentProcessorNumber(guint); // 0x10
 	guint SignalEvent(ghandle handle); // 0x11
 	guint ClearEvent(ghandle handle); // 0x12
-	guint MapMemoryBlock(ghandle handle, gptr addr, guint size, guint perm); // 0x13
+	guint MapSharedMemory(ghandle handle, gptr addr, guint size, guint perm); // 0x13
 	tuple<guint, guint> CreateTransferMemory(gptr addr, guint size, guint perm); // 0x15
 	guint CloseHandle(ghandle handle); // 0x16
 	guint ResetSignal(ghandle handle); // 0x17

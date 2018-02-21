@@ -13,13 +13,12 @@ void Ctu::execProgram(gptr ep) {
 
 	LoaderConfigEntry entries[3];
 
-	cpu.map(sp - ss, ss);
+	cpu.map(sp - ss, ss, UC_PROT_READ | UC_PROT_WRITE);
 	mmiohandler.MMIOInitialize();
 	cpu.setMmio(&mmiohandler);
 
 	auto mainThread = tm.create(ep, sp);
-	if (hbapi && loadType == "nro")
-	{
+	if (hbapi && loadType == "nro") {
 		// Setup
 		entries[0].key = MAIN_THREAD_HANDLE;
 		entries[0].value[0] = mainThread->handle;
@@ -32,8 +31,7 @@ void Ctu::execProgram(gptr ep) {
 		mainThread->regs.X0 = config;
 		mainThread->regs.X1 = 0xFFFFFFFFFFFFFFFF;
 	}
-	else
-	{
+	else {
 		mainThread->regs.X1 = mainThread->handle;
 	}
 	mainThread->resume();

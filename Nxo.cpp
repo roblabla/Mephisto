@@ -118,8 +118,7 @@ guint Kip::load(Ctu &ctu, gptr base, bool relocate) {
 	gptr bssmaxsize = hdr.section_headers[3].out_offset + align(hdr.section_headers[3].out_size, 0x1000);
 
 	gptr maxsize = std::max( { tmaxsize, romaxsize, rwmaxsize, bssmaxsize } );
-	printf("WTF IS THIS: %lx\n", maxsize);
-	ctu.cpu.map(base, maxsize);
+	ctu.cpu.map(base, maxsize, UC_PROT_ALL); // TODO: use proper permissions
 
 	size_t toff = 0x100;
 	size_t roff = toff + hdr.section_headers[0].compressed_size;
@@ -168,7 +167,7 @@ guint Nso::load(Ctu &ctu, gptr base, bool relocate) {
 	if(tsize & 0xFFF)
 		tsize = (tsize & ~0xFFF) + 0x1000;
 
-	ctu.cpu.map(base, tsize);
+	ctu.cpu.map(base, tsize, UC_PROT_ALL); // TODO: use proper permissions
 
 	char *text = decompress(fp, hdr.textOff, hdr.rdataOff - hdr.textOff, hdr.textSize);
 	ctu.cpu.writemem(base + hdr.textLoc, text, hdr.textSize);
@@ -221,7 +220,7 @@ guint Nro::load(Ctu &ctu, gptr base, bool relocate) {
 	}
 
 	gptr tsize = hdr.fileSize + hdr.bssSize;
-	ctu.cpu.map(base, tsize);
+	ctu.cpu.map(base, tsize, UC_PROT_ALL); // TODO: use proper permissions
 
 	char *image = new char[hdr.fileSize];
 	fp.seekg(0);

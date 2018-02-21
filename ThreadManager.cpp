@@ -8,7 +8,7 @@ Thread::Thread(Ctu *_ctu, int _id) : ctu(_ctu), id(_id), started(false) {
 
 	auto tlsSize = 0x1000;
 	tlsBase = (1 << 24) + tlsSize * _id;
-	ctu->cpu.map(tlsBase, tlsSize);
+	ctu->cpu.map(tlsBase, tlsSize, UC_PROT_READ | UC_PROT_WRITE);
 }
 
 void Thread::assignHandle(uint32_t _handle) {

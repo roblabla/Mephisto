@@ -198,33 +198,27 @@ public:
 		return temp;
 	}
 
-	void *getMapping(gptr addr)
-	{
+	void *getMapping(gptr addr) {
 		void *data = mappings[addr];
 		if (data == nullptr)
 			LOG_ERROR(Ctu, "Could not find mapping with addr" LONGFMT "!", addr);
 		return data;
 	}
 
-	bool newMapping(gptr addr, void *data)
-	{
+	bool newMapping(gptr addr, void *data) {
 		void *old_data = mappings[addr];
-		if (old_data == nullptr)
-		{
+		if (old_data == nullptr) {
 			mappings[addr] = data;
 			return true;
 		}
 		return false;
 	}
 
-	void *deleteMapping(gptr addr)
-	{
+	void *deleteMapping(gptr addr) {
 		void *old_data = mappings[addr];
-		if (old_data != nullptr)
-		{
+		if (old_data != nullptr) {
 			mappings[addr] = nullptr;
-			for (auto mapping : mappings)
-			{
+			for (auto mapping : mappings) {
 				if (mapping.second == old_data)
 					return old_data;
 			}
@@ -236,6 +230,7 @@ public:
 	bool hasHandle(ghandle handle) {
 		return handles.find(handle) != handles.end();
 	}
+
 	ghandle duplicateHandle(KObject *ptr);
 	void deleteHandle(ghandle handle);
 

@@ -24,7 +24,7 @@ void IpcBridge::start() {
 
 	for(auto i = 0; i < 24; ++i) {
 		auto addr = (i + 1) * (1 << 20) + (1 << 28);
-		ctu->cpu.map(addr, 1024 * 1024);
+		ctu->cpu.map(addr, 1024 * 1024, UC_PROT_READ | UC_PROT_WRITE);
 		buffers[i] = addr;
 	}
 
@@ -224,7 +224,7 @@ void IpcBridge::run() {
 		case 5: { // Map
 			gptr map_addr = readint();
 			uint64_t map_size = readint();
-			ctu->cpu.map(map_addr, map_size);
+			ctu->cpu.map(map_addr, map_size, UC_PROT_ALL);
 			activeMappings[map_addr] = map_size;
 			break;
 		}

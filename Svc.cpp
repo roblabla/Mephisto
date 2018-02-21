@@ -86,7 +86,7 @@ Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 	registerSvc_ret_X0(       0x10, GetCurrentProcessorNumber, IX0);
 	registerSvc_ret_X0(       0x11, SignalEvent, (ghandle) IX0);
 	registerSvc_ret_X0(       0x12, ClearEvent, (ghandle) IX0);
-	registerSvc_ret_X0(       0x13, MapMemoryBlock, (ghandle) IX0, IX1, IX2, IX3);
+	registerSvc_ret_X0(       0x13, MapSharedMemory, (ghandle) IX0, IX1, IX2, IX3);
 	registerSvc_ret_X0_X1(    0x15, CreateTransferMemory, IX0, IX1, IX2);
 	registerSvc_ret_X0(       0x16, CloseHandle, (ghandle) IX0);
 	registerSvc_ret_X0(       0x17, ResetSignal, (ghandle) IX0);
@@ -128,7 +128,7 @@ Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 tuple<guint, guint> Svc::SetHeapSize(guint size) {
 	LOG_DEBUG(Svc[0x01], "SetHeapSize 0x" LONGFMT, size);
 	if (ctu->heapsize < size) {
-		ctu->cpu.map(0xaa0000000 + ctu->heapsize, size - ctu->heapsize);
+		ctu->cpu.map(0xaa0000000 + ctu->heapsize, size - ctu->heapsize, UC_PROT_READ | UC_PROT_WRITE);
 	} else if (ctu->heapsize > size) {
 		ctu->cpu.unmap(0xaa0000000 + size, ctu->heapsize - size);
 	}
@@ -148,7 +148,7 @@ guint Svc::MapMemroy(gptr dest, gptr src, guint size) {
 	if (data == nullptr)
 		return 0xCC01;
 
-	ctu->cpu.map_ptr(dest, size, data);
+	ctu->cpu.map_ptr(dest, size, data, UC_PROT_READ | UC_PROT_WRITE);
 	return 0;
 }
 
@@ -269,12 +269,12 @@ guint Svc::ClearEvent(ghandle handle) {
 	return 0;
 }
 
-guint Svc::MapMemoryBlock(ghandle handle, gptr addr, guint size, guint perm) {
-	LOG_DEBUG(Svc[0x13], "MapMemoryBlock 0x%x 0x" LONGFMT " 0x" LONGFMT " 0x" LONGFMT, handle, addr, size, perm);
+guint Svc::MapSharedMemory(ghandle handle, gptr addr, guint size, guint perm) {
+	LOG_DEBUG(Svc[0x13], "MapSharedMemory 0x%x 0x" LONGFMT " 0x" LONGFMT " 0x" LONGFMT, handle, addr, size, perm);
 	auto obj = ctu->getHandle<MemoryBlock>(handle);
 	assert(obj->size == size);
 	assert(obj->addr == 0);
-	ctu->cpu.map(addr, size);
+	ctu->cpu.map(addr, size, UC_PROT_READ | UC_PROT_WRITE);
 	obj->addr = addr;
 	return 0;
 }
@@ -596,7 +596,7 @@ tuple<guint, guint> Svc::CreateMemoryBlock(guint size, guint perm) {
 
 guint Svc::MapTransferMemory(ghandle handle, gptr addr, guint size, guint perm) {
 	LOG_DEBUG(Svc[0x51], "MapTransferMemory");
-	ctu->cpu.map(addr, size);
+	ctu->cpu.map(addr, size, UC_PROT_READ | UC_PROT_WRITE);
 	return 0;
 }
 
@@ -662,7 +662,7 @@ guint Svc::MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint si
 	if (data == nullptr)
 		return 0xCC01;
 
-	ctu->cpu.map_ptr(dstaddr, size, data);
+	ctu->cpu.map_ptr(dstaddr, size, data, UC_PROT_READ | UC_PROT_WRITE);
 	return 0;
 }
 
@@ -678,7 +678,7 @@ guint Svc::MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guin
 	if (data == nullptr)
 		return 0xCC01;
 
-	ctu->cpu.map_ptr(dstaddr, size, data);
+	ctu->cpu.map_ptr(dstaddr, size, data, UC_PROT_EXEC);
 	return 0;
 }
 

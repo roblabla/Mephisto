@@ -77,7 +77,7 @@ void Mmio::MMIOInitialize() {
 		mmioBaseSize = (mmioBaseSize & ~0xFFF) + 0x1000;
 
 	LOG_DEBUG(Mmio, "Mapping 0x" ADDRFMT " size 0x%x", mmioBaseAddr, (uint) mmioBaseSize);
-	ctu->cpu.map(mmioBaseAddr, mmioBaseSize);
+	ctu->cpu.map(mmioBaseAddr, mmioBaseSize, UC_PROT_READ | UC_PROT_WRITE);
 }
 
 gptr Mmio::getVirtualAddressFromAddr(gptr addr) {
