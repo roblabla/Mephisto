@@ -67,6 +67,7 @@ void loadKip(Ctu &ctu, const string &lfn, gptr raddr) {
 	ctu.loadbase = min(raddr, ctu.loadbase);
 	auto top = raddr + 0x100000000;
 	ctu.loadsize = max(top - ctu.loadbase, ctu.loadsize);
+	ctu.loadType = "kip";
 	LOG_INFO(KipLoader, "Loaded %s at " ADDRFMT, lfn.c_str(), ctu.loadbase);
 }
 
@@ -79,6 +80,7 @@ void loadNso(Ctu &ctu, const string &lfn, gptr raddr) {
 	ctu.loadbase = min(raddr, ctu.loadbase);
 	auto top = raddr + 0x100000000;
 	ctu.loadsize = max(top - ctu.loadbase, ctu.loadsize);
+	ctu.loadType = "nso";	
 	LOG_INFO(NsoLoader, "Loaded %s at " ADDRFMT, lfn.c_str(), ctu.loadbase);
 }
 
@@ -91,6 +93,7 @@ void loadNro(Ctu &ctu, const string &lfn, gptr raddr) {
 	ctu.loadbase = min(raddr, ctu.loadbase);
 	auto top = raddr + 0x100000000;
 	ctu.loadsize = max(top - ctu.loadbase, ctu.loadsize);
+	ctu.loadType = "nro";
 	LOG_INFO(NroLoader, "Loaded %s at " ADDRFMT, lfn.c_str(), ctu.loadbase);
 }
 
@@ -122,6 +125,8 @@ void runLisp(Ctu &ctu, const string &dir, shared_ptr<Atom> code) {
 	} else if(head->strVal == "run-from") {
 		assert(code->children.size() == 2 && code->children[1]->type == Number);
 		ctu.execProgram(code->children[1]->numVal);
+	} else if (head->strVal == "enable-hbapi") {
+		ctu.hbapi = true;
 	} else if (head->strVal == "enable-sockets") {
 		ctu.socketsEnabled  = true;
 	} else if (head->strVal == "enable-gdb") {
@@ -129,8 +134,7 @@ void runLisp(Ctu &ctu, const string &dir, shared_ptr<Atom> code) {
 		if (code->children.size() == 2 && code->children[1]->type == Number)
 			port = (uint16_t)code->children[1]->numVal;
 		ctu.gdbStub.enable(port);
-	}
-	else
+	} else
 		LOG_ERROR(Main, "Unknown function in load script: '%s'", head->strVal.c_str());
 }
 

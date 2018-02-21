@@ -31,6 +31,7 @@
 #include <type_traits>
 #include <vector>
 #include <sstream>
+#include "hb-api.h"
 using namespace std;
 
 typedef __int128_t int128_t;
@@ -212,8 +213,10 @@ public:
 
 	guint heapsize;
 	gptr loadbase, loadsize;
+	string loadType;
 
 	bool socketsEnabled;
+	bool hbapi;
 
 private:
 	ghandle handleId;
