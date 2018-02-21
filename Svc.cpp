@@ -71,7 +71,7 @@
 Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 	registerSvc_ret_X0_X1(    0x01, SetHeapSize, IX1);
 	registerSvc_ret_X0(       0x03, SetMemoryAttribute, IX0, IX1, IX2, IX3);
-	registerSvc_ret_X0(       0x04, MirrorStack, IX0, IX1, IX2);
+	registerSvc_ret_X0(       0x04, MapMemroy, IX0, IX1, IX2);
 	registerSvc_ret_X0(       0x05, UnmapMemory, IX0, IX1, IX2);
 	registerSvc_ret_X0_X1(    0x06, QueryMemory, IX0, IX1, IX2);
 	registerSvc(              0x07, ExitProcess, IX0);
@@ -141,18 +141,22 @@ guint Svc::SetMemoryAttribute(gptr addr, guint size, guint state0, guint state1)
 	return 0;
 }
 
-guint Svc::MirrorStack(gptr dest, gptr src, guint size) {
-	LOG_DEBUG(Svc[0x04], "MirrorStack 0x" ADDRFMT " 0x" ADDRFMT " - 0x" LONGFMT, dest, src, size);
-	ctu->cpu.map(dest, size);
-	auto temp = new uint8_t[size];
-	ctu->cpu.readmem(src, temp, size);
-	ctu->cpu.writemem(dest, temp, size);
-	delete[] temp;
+guint Svc::MapMemroy(gptr dest, gptr src, guint size) {
+	LOG_DEBUG(Svc[0x04], "MapMemroy 0x" ADDRFMT " 0x" ADDRFMT " - 0x" LONGFMT, dest, src, size);
+
+	void *data = ctu->getMapping(src);
+	if (data == nullptr)
+		return 0xCC01;
+
+	ctu->cpu.map_ptr(dest, size, data);
 	return 0;
 }
 
 guint Svc::UnmapMemory(gptr dest, gptr src, guint size) {
 	LOG_DEBUG(Svc[0x05], "UnmapMemory 0x" ADDRFMT " 0x" ADDRFMT " - 0x" LONGFMT, dest, src, size);
+	void *data = ctu->getMapping(src);
+	if (data == nullptr)
+		return 0xCC01;
 	ctu->cpu.unmap(dest, size);
 	return 0;
 }
@@ -654,13 +658,11 @@ guint Svc::UnmapDeviceAddressSpace(guint unk0, ghandle phandle, gptr maddr, guin
 guint Svc::MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size) {
 	LOG_DEBUG(Svc[0x74], "MapProcessMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
 
-	// XXX: TOTALLY WRONG BUT BETTER THAN BEFORE
-	ctu->cpu.map(dstaddr, size);
-	char *mem = (char *) malloc(size);
-	memset(mem, 0, size);
-	ctu->cpu.readmem(srcaddr, mem, size);
-	ctu->cpu.writemem(dstaddr, mem, size);
-	free(mem);
+	void *data = ctu->getMapping(srcaddr);
+	if (data == nullptr)
+		return 0xCC01;
+
+	ctu->cpu.map_ptr(dstaddr, size, data);
 	return 0;
 }
 
@@ -672,12 +674,11 @@ guint Svc::UnmapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint 
 
 guint Svc::MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size) {
 	LOG_DEBUG(Svc[0x77], "MapProcessCodeMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
-	ctu->cpu.map(dstaddr, size);
-	char *mem = (char *) malloc(size);
-	memset(mem, 0, size);
-	ctu->cpu.readmem(srcaddr, mem, size);
-	ctu->cpu.writemem(dstaddr, mem, size);
-	free(mem);
+	void *data = ctu->getMapping(srcaddr);
+	if (data == nullptr)
+		return 0xCC01;
+
+	ctu->cpu.map_ptr(dstaddr, size, data);
 	return 0;
 }
 

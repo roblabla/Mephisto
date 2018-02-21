@@ -24,7 +24,7 @@ private:
 
 	tuple<guint, guint> SetHeapSize(guint size); // 0x01
 	guint SetMemoryAttribute(gptr addr, guint size, guint state0, guint state1); // 0x03
-	guint MirrorStack(gptr dest, gptr src, guint size); // 0x04
+	guint MapMemroy(gptr dest, gptr src, guint size); // 0x04
 	guint UnmapMemory(gptr dest, gptr src, guint size); // 0x05
 	tuple<guint, guint> QueryMemory(gptr meminfo, gptr pageinfo, gptr addr); // 0x06
 	void ExitProcess(guint exitCode); // 0x07

@@ -18,6 +18,7 @@ public:
 	void stop();
 
 	bool map(gptr addr, guint size);
+	bool map_ptr(gptr addr, guint size, void *data);
 	bool unmap(gptr addr, guint size);
 	list<tuple<gptr, guint, int>> regions();
 	bool readmem(gptr addr, void *dest, guint size);

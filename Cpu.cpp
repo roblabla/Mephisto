@@ -118,17 +118,20 @@ void Cpu::stop() {
 }
 
 bool Cpu::map(gptr addr, guint size) {
-	CHECKED(uc_mem_map(uc, addr, size, UC_PROT_ALL));
 	auto temp = new uint8_t[size];
 	memset(temp, 0, size);
-	writemem(addr, temp, size);
-	delete[] temp;
-	return true;
+	return this->map_ptr(addr, size, temp);
+}
+
+bool Cpu::map_ptr(gptr addr, guint size, void *data)
+{
+	CHECKED(uc_mem_map_ptr(uc, addr, size, UC_PROT_ALL, data));
+	return ctu->newMapping(addr, data);;
 }
 
 bool Cpu::unmap(gptr addr, guint size) {
 	CHECKED(uc_mem_unmap(uc, addr, size));
-	return true;
+	return ctu->deleteMapping(addr);
 }
 
 list<tuple<gptr, gptr, int>> Cpu::regions() {

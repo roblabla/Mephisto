@@ -197,6 +197,42 @@ public:
 			LOG_ERROR(Ctu, "Got null pointer after cast. Before: 0x%p", (void *) obj.get());
 		return temp;
 	}
+
+	void *getMapping(gptr addr)
+	{
+		void *data = mappings[addr];
+		if (data == nullptr)
+			LOG_ERROR(Ctu, "Could not find mapping with addr" LONGFMT "!", addr);
+		return data;
+	}
+
+	bool newMapping(gptr addr, void *data)
+	{
+		void *old_data = mappings[addr];
+		if (old_data == nullptr)
+		{
+			mappings[addr] = data;
+			return true;
+		}
+		return false;
+	}
+
+	void *deleteMapping(gptr addr)
+	{
+		void *old_data = mappings[addr];
+		if (old_data != nullptr)
+		{
+			mappings[addr] = nullptr;
+			for (auto mapping : mappings)
+			{
+				if (mapping.second == old_data)
+					return old_data;
+			}
+			free(old_data);
+		}
+		return nullptr;
+	}
+
 	bool hasHandle(ghandle handle) {
 		return handles.find(handle) != handles.end();
 	}
@@ -221,6 +257,7 @@ public:
 private:
 	ghandle handleId;
 	unordered_map<ghandle, shared_ptr<KObject>> handles;
+	unordered_map<gptr, void*> mappings;
 };
 
 #include "IpcStubs.h"
