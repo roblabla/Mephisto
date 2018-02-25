@@ -200,8 +200,6 @@ public:
 
 	void *getMapping(gptr addr) {
 		void *data = mappings[addr];
-		if (data == nullptr)
-			LOG_ERROR(Ctu, "Could not find mapping with addr" LONGFMT "!", addr);
 		return data;
 	}
 
@@ -212,6 +210,10 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	unordered_map<gptr, void*> getMappings() {
+		return mappings;
 	}
 
 	void *deleteMapping(gptr addr) {

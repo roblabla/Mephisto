@@ -11,7 +11,7 @@ void Ctu::execProgram(gptr ep) {
 	auto ss = 8 * 1024 * 1024;
 	auto config = 6 << 24;
 
-	LoaderConfigEntry entries[3];
+	LoaderConfigEntry entries[5];
 
 	cpu.map(sp - ss, ss, UC_PROT_READ | UC_PROT_WRITE);
 	mmiohandler.MMIOInitialize();
@@ -19,14 +19,28 @@ void Ctu::execProgram(gptr ep) {
 
 	auto mainThread = tm.create(ep, sp);
 	if (hbapi && loadType == "nro") {
+		this->heapsize = 0x100000;
+
+		// FIXME: correctly handle page mapping to avoid declaring multiple distinct pages
+		for (guint offset = 0; offset < this->heapsize; offset += 4096) {
+			cpu.map(0xaa0000000 + offset, 4096, UC_PROT_READ | UC_PROT_WRITE);
+		}
+		//cpu.map(0xaa0000000, this->heapsize, UC_PROT_READ | UC_PROT_WRITE);
+
+
 		// Setup
 		entries[0].key = MAIN_THREAD_HANDLE;
 		entries[0].value[0] = mainThread->handle;
 		entries[1].key = APPLET_TYPE;
 		entries[1].value[0] = APPLET_TYPE_APPLICATION;
-		entries[2].key = END_OF_LIST;
+		entries[2].key = OVERRIDE_HEAP;
+		entries[2].value[0] = 0xaa0000000;
+		entries[2].value[1] = this->heapsize;
+		entries[3].key = PROCESS_HANDLE;
+		entries[3].value[0] = 0xffff8001;
+		entries[4].key = END_OF_LIST;
 
-		cpu.writemem(config, &entries, 3 * sizeof(LoaderConfigEntry));
+		cpu.writemem(config, &entries, 4 * sizeof(LoaderConfigEntry));
 
 		mainThread->regs.X0 = config;
 		mainThread->regs.X1 = 0xFFFFFFFFFFFFFFFF;

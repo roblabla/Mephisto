@@ -70,6 +70,7 @@
 
 Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 	registerSvc_ret_X0_X1(    0x01, SetHeapSize, IX1);
+	registerSvc_ret_X0(0x02, SetMemoryPermission, IX0, IX1, IX2);
 	registerSvc_ret_X0(       0x03, SetMemoryAttribute, IX0, IX1, IX2, IX3);
 	registerSvc_ret_X0(       0x04, MapMemroy, IX0, IX1, IX2);
 	registerSvc_ret_X0(       0x05, UnmapMemory, IX0, IX1, IX2);
@@ -134,6 +135,12 @@ tuple<guint, guint> Svc::SetHeapSize(guint size) {
 	}
 	ctu->heapsize = size;
 	return make_tuple(0, 0xaa0000000);
+}
+
+guint Svc::SetMemoryPermission(gptr addr, guint size, guint prot) {
+	LOG_DEBUG(Svc[0x02], "SetMemoryPermission 0x" ADDRFMT " 0x" LONGFMT " -> 0x" LONGFMT, addr, size, prot);
+	ctu->cpu.mperms(addr, size, (uint32_t)prot);
+	return 0;
 }
 
 guint Svc::SetMemoryAttribute(gptr addr, guint size, guint state0, guint state1) {
@@ -673,7 +680,7 @@ guint Svc::UnmapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint 
 }
 
 guint Svc::MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x77], "MapProcessCodeMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
+	LOG_DEBUG(Svc[0x77], "MapProcessCodeMemory(0x%x, 0x%lx, 0x%lx ,0x%lx)", handle, dstaddr, srcaddr, size);
 	void *data = ctu->getMapping(srcaddr);
 	if (data == nullptr)
 		return 0xCC01;
@@ -683,7 +690,7 @@ guint Svc::MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guin
 }
 
 guint Svc::UnmapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size) {
-	LOG_DEBUG(Svc[0x78], "UnmapProcessCodeMemory(0x%lx, 0x%lx ,0x%lx)", dstaddr, srcaddr, size);
+	LOG_DEBUG(Svc[0x78], "UnmapProcessCodeMemory(0x%x, 0x%lx, 0x%lx ,0x%lx)", handle, dstaddr, srcaddr, size);
 	ctu->cpu.unmap(dstaddr, size);
 	return 0;
 }

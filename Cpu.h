@@ -17,6 +17,7 @@ public:
 	void exec(size_t insnCount=0);
 	void stop();
 
+	bool mperms(gptr addr, guint size, uint32_t perms);
 	bool map(gptr addr, guint size, uint32_t perms);
 	bool map_ptr(gptr addr, guint size, void *data, uint32_t perms);
 	bool unmap(gptr addr, guint size);

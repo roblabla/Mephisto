@@ -117,6 +117,10 @@ void Cpu::stop() {
 	CHECKED(uc_emu_stop(uc));
 }
 
+bool Cpu::mperms(gptr addr, guint size, uint32_t perms) {
+	return uc_mem_protect(uc, addr, size, perms);
+}
+
 bool Cpu::map(gptr addr, guint size, uint32_t perms) {
 	auto temp = new uint8_t[size];
 	memset(temp, 0, size);
@@ -125,12 +129,12 @@ bool Cpu::map(gptr addr, guint size, uint32_t perms) {
 
 bool Cpu::map_ptr(gptr addr, guint size, void *data, uint32_t perms) {
 	CHECKED(uc_mem_map_ptr(uc, addr, size, perms, data));
-	return ctu->newMapping(addr, data);;
+	return ctu->newMapping(addr, data);
 }
 
 bool Cpu::unmap(gptr addr, guint size) {
 	CHECKED(uc_mem_unmap(uc, addr, size));
-	return ctu->deleteMapping(addr);
+	return ctu->deleteMapping(addr) != nullptr;
 }
 
 list<tuple<gptr, gptr, int>> Cpu::regions() {

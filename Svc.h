@@ -23,6 +23,7 @@ private:
 	shared_ptr<Semaphore> ensureSemaphore(gptr semaAddr);
 
 	tuple<guint, guint> SetHeapSize(guint size); // 0x01
+	guint SetMemoryPermission(gptr addr, guint size, guint prot); // 0x02
 	guint SetMemoryAttribute(gptr addr, guint size, guint state0, guint state1); // 0x03
 	guint MapMemroy(gptr dest, gptr src, guint size); // 0x04
 	guint UnmapMemory(gptr dest, gptr src, guint size); // 0x05
