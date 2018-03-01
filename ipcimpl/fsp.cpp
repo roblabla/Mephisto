@@ -173,8 +173,12 @@ uint32_t nn::fssrv::sf::IFileSystem::CreateFile(IN uint64_t mode, IN uint32_t si
 
 uint32_t nn::fssrv::sf::IFileSystem::CreateDirectory(IN int8_t * path, guint path_size) {
 	LOG_DEBUG(Fsp, "Create directory %s", (fnPath+string((char*)path)).c_str());
-	if (mkdir((fnPath+string((char*)path)).c_str(), 0755) == -1)
-		return 0x7d402;
+	if (mkdir((fnPath+string((char*)path)).c_str(), 0755) == -1) {
+		if (errno == EEXIST)
+			return 0x402;
+		else
+			return 0x7d402;
+	}
 	return 0;
 }
 
@@ -412,20 +416,22 @@ uint32_t nn::fssrv::sf::IFile::Flush() {
 	return 0;
 }
 
+#ifdef _WIN32
+#include <io.h>
+static int truncate_file(FILE *f, off_t length) {
+	return _chsize(fileno(f), length);
+}
+#elif __unix__
+static int truncate_file(FILE *f, off_t length) {
+	return ftruncate(fileno(f), length);
+}
+#else
+#error "Unknown OS"
+#endif
+
 uint32_t nn::fssrv::sf::IFile::SetSize(IN uint64_t size) {
 	if(isOpen && fp != nullptr) {
-		fseek((FILE *)fp, 0, SEEK_END);
-		uint32_t curSize = (uint32_t)ftell((FILE *)fp);
-
-		if(curSize < (uint32_t)size) {
-			uint32_t remaining = (uint32_t)size-curSize;
-			char *buf = (char*)malloc(remaining);
-			memset(buf, 0, remaining);
-			fwrite(buf, 1, remaining, (FILE *)fp);
-			free(buf);
-		}
-
-		fseek((FILE *)fp, bufferOffset, SEEK_SET);
+		truncate_file((FILE*)fp, (off_t)size);
 	}
 	return 0;
 }
