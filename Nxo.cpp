@@ -220,7 +220,17 @@ guint Nro::load(Ctu &ctu, gptr base, bool relocate) {
 	}
 
 	gptr tsize = hdr.fileSize + hdr.bssSize;
-	ctu.cpu.map(base, tsize, UC_PROT_ALL); // TODO: use proper permissions
+
+	LOG_DEBUG(Nxo, "Mapping %lx - %lx as TEXT", base + hdr.textOff, base + hdr.textOff + hdr.textSize);
+	ctu.cpu.map(base + hdr.textOff, hdr.textSize, UC_PROT_READ | UC_PROT_EXEC); 				// Text
+	LOG_DEBUG(Nxo, "Mapping %lx - %lx as RO", base + hdr.roOff, base + hdr.roOff + hdr.roSize);
+	ctu.cpu.map(base + hdr.roOff, hdr.roSize, UC_PROT_READ);									// RO
+	LOG_DEBUG(Nxo, "Mapping %lx - %lx as DATA", base + hdr.dataOff, base + hdr.dataOff + hdr.dataSize);
+	ctu.cpu.map(base + hdr.dataOff, hdr.dataSize, UC_PROT_READ | UC_PROT_WRITE);				// Data
+	if (hdr.bssSize != 0) {
+		LOG_DEBUG(Nxo, "Mapping %lx - %lx as BSS", base + hdr.dataOff + hdr.dataSize, base + hdr.dataOff + hdr.dataSize + hdr.bssSize);
+		ctu.cpu.map(base + hdr.dataOff + hdr.dataSize, hdr.bssSize, UC_PROT_READ | UC_PROT_WRITE);	// BSS
+	}
 
 	char *image = new char[hdr.fileSize];
 	fp.seekg(0);
@@ -290,7 +300,9 @@ guint Nro::load(Ctu &ctu, gptr base, bool relocate) {
 		}
 	}
         
-	ctu.cpu.writemem(base, image, hdr.fileSize);
+	ctu.cpu.writemem(base + hdr.textOff, image + hdr.textOff, hdr.textSize);
+	ctu.cpu.writemem(base + hdr.roOff, image + hdr.roOff, hdr.roSize);
+	ctu.cpu.writemem(base + hdr.dataOff, image + hdr.dataOff, hdr.dataSize);
 	delete[] image;
         
 	return tsize;
