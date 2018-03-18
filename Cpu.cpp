@@ -132,6 +132,18 @@ bool Cpu::map_ptr(gptr addr, guint size, void *data, uint32_t perms) {
 	return ctu->newMapping(addr, data);
 }
 
+void Cpu::printMemRegions() {
+	uc_mem_region *regions;
+	uint32_t count;
+
+	CHECKED(uc_mem_regions(uc, &regions, &count));
+	list<tuple<gptr, gptr>> temp;
+	for(auto i = 0; i < count; ++i) {
+		std::cout << "Found region: " << std::hex << regions[i].begin << " - " << regions[i].end << std::endl;
+	}
+	uc_free(regions);
+}
+
 bool Cpu::unmap(gptr addr, guint size) {
 	CHECKED(uc_mem_unmap(uc, addr, size));
 	return ctu->deleteMapping(addr) != nullptr;

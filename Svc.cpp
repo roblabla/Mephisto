@@ -205,6 +205,9 @@ tuple<guint, guint> Svc::QueryMemory(gptr meminfo, gptr pageinfo, gptr addr) {
 // libtransistor tests.
 void Svc::ExitProcess(guint exitCode) {
 	LOG_DEBUG(Svc[0x07], "ExitProcess");
+	// Ensure we freed all the handles!
+	ctu->printUnclosedHandles();
+	ctu->cpu.printMemRegions();
 	exit((int) exitCode);
 }
 

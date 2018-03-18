@@ -186,8 +186,10 @@ public:
 	template<typename T>
 	shared_ptr<T> getHandle(ghandle handle) {
 		static_assert(std::is_base_of<KObject, T>::value, "T must derive from KObject");
-		if(handles.find(handle) == handles.end())
-			LOG_ERROR(Ctu, "Could not find handle with ID 0x%x !", handle);
+		if(handles.find(handle) == handles.end()) {
+			LOG_INFO(Ctu, "Could not find handle with ID 0x%x !", handle);
+			return nullptr;
+		}
 		auto obj = handles[handle];
 		auto faux = dynamic_pointer_cast<FauxHandle>(obj);
 		if(faux != nullptr)
@@ -227,6 +229,12 @@ public:
 			free(old_data);
 		}
 		return nullptr;
+	}
+
+
+	void printUnclosedHandles() {
+		for ( auto it = handles.begin(); it != handles.end(); ++it )
+			std::cout << "Exiting with unclosed handle " << std::hex << it->first << std::endl;
 	}
 
 	bool hasHandle(ghandle handle) {

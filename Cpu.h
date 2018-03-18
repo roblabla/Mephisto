@@ -57,6 +57,8 @@ public:
 	void setMmio(Mmio *_mmioHandler);// { mmioHandler = _mmioHandler; }
 	Mmio *mmioHandler;
 
+	void printMemRegions();
+
 	bool hitMemBreakpoint;
 
 private:
