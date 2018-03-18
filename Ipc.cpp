@@ -154,7 +154,7 @@ void OutgoingIpcMessage::commit() {
 uint32_t IpcService::messageSync(shared_ptr<array<uint8_t, 0x100>> buf, bool& closeHandle) {
 	uint8_t obuf[0x100];
 	memset(obuf, 0, 0x100);
-	//hexdump(buf, 0x50);
+	hexdump(buf, 0x100);
 	IncomingIpcMessage msg(buf->data(), isDomainObject);
 	OutgoingIpcMessage resp(obuf, isDomainObject);
 	auto ret = 0xf601;
@@ -229,7 +229,7 @@ uint32_t IpcService::messageSync(shared_ptr<array<uint8_t, 0x100>> buf, bool& cl
 	if(ret == 0) {
 		resp.commit();
 		memcpy(buf->data(), obuf, 0x100);
-		//hexdump(buf, 0x50);
+		hexdump(buf, 0x100);
 	}
 	return ret;
 }

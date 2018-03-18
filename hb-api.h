@@ -14,7 +14,8 @@ enum {
     APPLET_WORKAROUND,
     STDIO_SOCKETS,
     PROCESS_HANDLE,
-    LAST_LOAD_RESULT
+    LAST_LOAD_RESULT,
+    LOG = 51
 } LoaderKey;
 
 enum {

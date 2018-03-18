@@ -128,6 +128,7 @@ bool Cpu::map(gptr addr, guint size, uint32_t perms) {
 }
 
 bool Cpu::map_ptr(gptr addr, guint size, void *data, uint32_t perms) {
+	std::cout << "Mapping ptr " << std::hex << addr << " - " << addr + size << " with perms " << perms << std::endl;
 	CHECKED(uc_mem_map_ptr(uc, addr, size, perms, data));
 	return ctu->newMapping(addr, data);
 }
@@ -343,7 +344,9 @@ void Cpu::interruptHook(uint32_t intNo) {
 }
 
 bool Cpu::unmappedHook(uc_mem_type type, gptr addr, int size, guint value) {
-	cout << "!!!!!!!!!!!!!!!!!!!!!!!! Unmapped !!!!!!!!!!!!!!!!!!!!!!!" << endl;
+	gptr this_pc;
+	uc_reg_read(uc, UC_ARM64_REG_PC, &this_pc);
+	cout << "!!!!!!!!!!!!!!!!!!!!!!!! Unmapped !!!!!!!!!!!!!!!!!!!!!!!: " << type << " at PC " << this_pc << " and addr " << addr << " of size " << size << " and value " << value << endl;
 	switch(type) {
 		case UC_MEM_READ_UNMAPPED:
 		case UC_MEM_READ_PROT:

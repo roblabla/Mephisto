@@ -87,7 +87,7 @@ void loadNso(Ctu &ctu, const string &lfn, gptr raddr) {
 void loadNro(Ctu &ctu, const string &lfn, gptr raddr) {
 	assert(exists(lfn));
 	Nro file(lfn);
-	if(file.load(ctu, raddr, true) == 0) {
+	if(file.load(ctu, raddr, false) == 0) {
 		LOG_ERROR(NroLoader, "Failed to load %s", lfn.c_str());
 	}
 	ctu.loadbase = min(raddr, ctu.loadbase);

@@ -1,4 +1,4 @@
-CC := clang++-5.0
+CC := clang++
 PYTHON2 := python2
 CPP_FILES := $(wildcard *.cpp)
 IPCIMPL_FILES := $(wildcard ipcimpl/*.cpp)

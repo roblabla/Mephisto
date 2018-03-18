@@ -155,7 +155,7 @@ guint Svc::MapMemroy(gptr dest, gptr src, guint size) {
 	if (data == nullptr)
 		return 0xCC01;
 
-	ctu->cpu.map_ptr(dest, size, data, UC_PROT_READ | UC_PROT_WRITE);
+	ctu->cpu.map_ptr(dest, size, data, UC_PROT_ALL);
 	return 0;
 }
 
@@ -461,6 +461,8 @@ guint Svc::SendSyncRequest(ghandle handle) {
 	LOG_DEBUG(Svc[0x21], "SendSyncRequest 0x%x", handle);
 	auto thread = ctu->tm.current();
 	auto hnd = ctu->getHandle<IPipe>(handle);
+	if (hnd == nullptr)
+		return 0xF601; // Is this the right one ?
 	auto buf = make_shared<array<uint8_t, 0x100>>();
 	ctu->cpu.readmem(thread->tlsBase, buf->data(), 0x100);
 	if(hnd->isAsync()) {
