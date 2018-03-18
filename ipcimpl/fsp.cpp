@@ -151,9 +151,28 @@ nn::fssrv::sf::IFileSystem::IFileSystem(Ctu *_ctu, string  _fnPath) : IpcService
 
 uint32_t nn::fssrv::sf::IFileSystem::DeleteFile(IN int8_t * path, guint path_size) {
 	LOG_DEBUG(Fsp, "Delete file %s", (fnPath+string((char*)path)).c_str());
-	remove((fnPath+string((char*)path)).c_str());
+	if (unlink((fnPath+string((char*)path)).c_str()) == -1) {
+		if (errno == ENOENT)
+			return 0x202;
+		else
+			return 0x7d402;
+	}
 	return 0;
 }
+
+uint32_t nn::fssrv::sf::IFileSystem::DeleteDirectory(IN int8_t * path, guint path_size) {
+	LOG_DEBUG(Fsp, "Delete directory %s", (fnPath+string((char*)path)).c_str());
+	if (remove((fnPath+string((char*)path)).c_str()) == -1) {
+		if (errno == ENOENT)
+			return 0x202;
+		else if (errno == ENOTEMPTY)
+			return 0x1002;
+		else
+			return 0x7d402;
+	}
+	return 0;
+}
+
 
 uint32_t nn::fssrv::sf::IFileSystem::CreateFile(IN uint64_t mode, IN uint32_t size, IN int8_t * path, guint path_size) {
 	LOG_DEBUG(Fsp, "Create file %s", (fnPath+string((char*)path)).c_str());
@@ -163,6 +182,59 @@ uint32_t nn::fssrv::sf::IFileSystem::CreateFile(IN uint64_t mode, IN uint32_t si
 	fclose(fp);
 	return 0;
 }
+
+uint32_t nn::fssrv::sf::IFileSystem::CreateDirectory(IN int8_t * path, guint path_size) {
+	LOG_DEBUG(Fsp, "Create directory %s", (fnPath+string((char*)path)).c_str());
+	if (mkdir((fnPath+string((char*)path)).c_str(), 0755) == -1) {
+		if (errno == EEXIST)
+			return 0x402;
+		else
+			return 0x7d402;
+	}
+	return 0;
+}
+
+uint32_t nn::fssrv::sf::IFileSystem::GetEntryType(IN int8_t * path, guint path_size, OUT uint32_t& _1) {
+	LOG_DEBUG(IpcStubs, "GetEntryType for file %s", (fnPath + string((char*)path)).c_str());
+	struct stat path_stat;
+
+	if (stat((fnPath+string((char*)path)).c_str(), &path_stat) == -1)
+		return 0x202;
+
+	if (S_ISREG(path_stat.st_mode))
+		_1 = 1;
+	else if (S_ISDIR(path_stat.st_mode))
+		_1 = 0;
+	else
+		return 0x271002;
+	return 0;
+}
+
+
+uint32_t nn::fssrv::sf::IFileSystem::RenameDirectory(IN int8_t * oldPath, guint oldPath_size, IN int8_t * newPath, guint newPath_size) {
+	string oldstr = fnPath+string((char*)oldPath);
+	string newstr = fnPath+string((char*)newPath);
+
+	LOG_DEBUG(Fsp, "Renaming %s into %s", oldstr.c_str(), newstr.c_str());
+
+	if (rename(oldstr.c_str(), newstr.c_str()) == -1)
+		return 0x7d402;
+	return 0;
+}
+
+uint32_t nn::fssrv::sf::IFileSystem::RenameFile(IN int8_t * oldPath, guint oldPath_size, IN int8_t * newPath, guint newPath_size) {
+	string oldstr = fnPath+string((char*)oldPath);
+	string newstr = fnPath+string((char*)newPath);
+
+	LOG_DEBUG(Fsp, "Renaming %s into %s", oldstr.c_str(), newstr.c_str());
+
+	if (rename(oldstr.c_str(), newstr.c_str()) == -1) {
+		LOG_DEBUG(Fsp, "Failed to rename: %d", errno);
+		return 0x7d402;
+	}
+	return 0;
+}
+
 
 // Funcs
 uint32_t nn::fssrv::sf::IFileSystemProxy::OpenDataFileSystemByCurrentProcess(OUT shared_ptr<nn::fssrv::sf::IFileSystem>& _0) {
