@@ -47,7 +47,7 @@ const option::Descriptor usage[] =
 	{ENABLE_GDB, 0,"g","enable-gdb",Arg::None, "  --enable-gdb, -g  \tEnable GDB stub." },
 	{PORT, 0,"p","gdb-port",Arg::Numeric, "  --gdb-port, -p  \tSet port for GDB; default 24689." },
 	{NSO, 0,"","load-nso",Arg::NonEmpty, "  --load-nso  \tLoad an NSO without load directory"},
-	{NRO, 0,"","load-nro",Arg::NonEmpty, "  --load-nro  \tLoad an NRO without load directory (entry point .text+0x80)"},
+	{NRO, 0,"","load-nro",Arg::NonEmpty, "  --load-nro  \tLoad an NRO without load directory (entry point .text+0x00)"},
 	{KIP, 0,"","load-kip",Arg::NonEmpty, "  --load-kip  \tLoad a KIP without load directory"},
 	{ENABLE_SOCKETS, 0, "b","enable-sockets",Arg::None, "  -- enable-sockets, -b  \tEnable BSD socket passthrough." },
 	{0,0,nullptr,nullptr,nullptr,nullptr}
@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
 		ctu.execProgram(0x7100000000);
 	} else if(options[NRO].count()) {
 		loadNro(ctu, options[NRO][0].arg, 0x7100000000);
-		ctu.execProgram(0x7100000080);
+		ctu.execProgram(0x7100000000);
 	} else if(options[KIP].count()) {
 		loadKip(ctu, options[KIP][0].arg, 0x7100000000);
 		ctu.execProgram(0x7100000000);
