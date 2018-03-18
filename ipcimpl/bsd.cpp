@@ -28,7 +28,6 @@ nn::socket::sf::IClient::IClient(Ctu *_ctu) : IpcService(_ctu) {
 }
 
 uint32_t nn::socket::sf::IClient::Accept(IN uint32_t socket, OUT int32_t& ret, OUT uint32_t& bsd_errno, OUT uint32_t& sockaddr_len, OUT sockaddr * _4, guint _4_size) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::accept");
 	if(passthrough) {
 		struct sockaddr *addr = (struct sockaddr *) _4;
 		socklen_t size = (uint32_t) _4_size;
@@ -43,7 +42,6 @@ uint32_t nn::socket::sf::IClient::Accept(IN uint32_t socket, OUT int32_t& ret, O
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Bind(IN uint32_t socket, IN sockaddr * _1, guint _1_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::bind");
 	if(passthrough) {
 		struct sockaddr *addr = (struct sockaddr *) _1;
 		addr->sa_family = fam_ntohs(addr->sa_family);
@@ -56,7 +54,6 @@ uint32_t nn::socket::sf::IClient::Bind(IN uint32_t socket, IN sockaddr * _1, gui
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Close(IN uint32_t socket, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::bsd_close");
 	if(passthrough) {
 		ret = ::close(socket);
 		bsd_errno = errno;
@@ -67,10 +64,9 @@ uint32_t nn::socket::sf::IClient::Close(IN uint32_t socket, OUT int32_t& ret, OU
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Connect(IN uint32_t socket, IN sockaddr * _1, guint _1_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::connect");
 	if(passthrough) {
 		struct sockaddr *addr = (struct sockaddr *) _1;
-		addr->sa_family = fam_ntohs(addr->sa_family); // yes, this is network byte order on the switch and host byte order on linux
+		addr->sa_family = addr->sa_family >> 8; // On the switch, sa_family is split into sa_len and sa_family. Let's set it correctly.
 		ret = ::connect(socket, (struct sockaddr *) addr, (socklen_t) _1_size);
 		bsd_errno = errno;
 	} else {
@@ -80,7 +76,6 @@ uint32_t nn::socket::sf::IClient::Connect(IN uint32_t socket, IN sockaddr * _1, 
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::GetSockName(IN uint32_t socket, OUT int32_t& ret, OUT uint32_t& bsd_errno, OUT uint32_t& sockaddr_len, OUT sockaddr * _4, guint _4_size) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::getsockname");
 	if(passthrough) {
 		struct sockaddr *addr = (struct sockaddr *) _4;
 		socklen_t addr_len = (socklen_t) _4_size;
@@ -96,7 +91,6 @@ uint32_t nn::socket::sf::IClient::GetSockName(IN uint32_t socket, OUT int32_t& r
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Listen(IN uint32_t socket, IN uint32_t backlog, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::listen");
 	if(passthrough) {
 		ret = ::listen(socket, backlog);
 		bsd_errno = errno;
@@ -107,7 +101,6 @@ uint32_t nn::socket::sf::IClient::Listen(IN uint32_t socket, IN uint32_t backlog
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Recv(IN uint32_t socket, IN uint32_t flags, OUT int32_t& ret, OUT uint32_t& bsd_errno, OUT int8_t * _4, guint _4_size) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::recv");
 	if(passthrough) {
 		ret = (int32_t) ::recv(socket, _4, _4_size, flags);
 		bsd_errno = errno;
@@ -118,18 +111,26 @@ uint32_t nn::socket::sf::IClient::Recv(IN uint32_t socket, IN uint32_t flags, OU
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Send(IN uint32_t socket, IN uint32_t flags, IN int8_t * _2, guint _2_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::send");
 	if(passthrough) {
 		ret = (uint32_t) ::send(socket, _2, (size_t) _2_size, flags);
 		bsd_errno = errno;
 	} else {
 		ret = 0;
-		errno = 0;
+		bsd_errno = 0;
+	}
+	return 0;
+}
+uint32_t nn::socket::sf::IClient::Write(IN uint32_t socket, IN int8_t * message, guint message_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
+	if (passthrough) {
+		ret = (uint32_t) ::write(socket, message, message_size);
+		bsd_errno = errno;
+	} else {
+		ret = 0;
+		bsd_errno = 0;
 	}
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::SendTo(IN uint32_t socket, IN uint32_t flags, IN int8_t * _2, guint _2_size, IN sockaddr * _3, guint _3_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::sendto");
 	if(passthrough) {
 		struct sockaddr *addr = (struct sockaddr *) _3;
 		addr->sa_family = fam_ntohs(addr->sa_family);
@@ -142,11 +143,9 @@ uint32_t nn::socket::sf::IClient::SendTo(IN uint32_t socket, IN uint32_t flags, 
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::SetSockOpt(IN uint32_t socket, IN uint32_t level, IN uint32_t option_name, IN uint8_t * _3, guint _3_size, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::setsockopt");
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Shutdown(IN uint32_t socket, IN uint32_t how, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::shutdown");
 	if(passthrough) {
 		ret = ::shutdown(socket, how);
 	} else {
@@ -156,7 +155,6 @@ uint32_t nn::socket::sf::IClient::Shutdown(IN uint32_t socket, IN uint32_t how, 
 	return 0;
 }
 uint32_t nn::socket::sf::IClient::Socket(IN uint32_t domain, IN uint32_t type, IN uint32_t protocol, OUT int32_t& ret, OUT uint32_t& bsd_errno) {
-	LOG_DEBUG(IpcStubs, "Stub implementation for nn::socket::sf::IClient::socket");
 	if(passthrough) {
 		ret = ::socket(domain, type, protocol);
 		bsd_errno = errno;
