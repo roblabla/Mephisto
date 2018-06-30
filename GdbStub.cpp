@@ -290,7 +290,7 @@ void GdbStub::sendPacket(const char packet) {
 }
 
 void GdbStub::sendReply(const char* reply) {
-	LOG_DEBUG(GdbStub, "Reply: %s", reply);
+	//LOG_DEBUG(GdbStub, "Reply: %s", reply);
 	memset(commandBuffer, 0, sizeof(commandBuffer));
 
 	commandLength = static_cast<uint32_t>(strlen(reply));
@@ -717,7 +717,7 @@ void GdbStub::handlePacket() {
 	if(commandLength == 0)
 		return;
 
-	LOG_DEBUG(GdbStub, "Packet: %s", commandBuffer);
+	//LOG_DEBUG(GdbStub, "Packet: %s", commandBuffer);
 
 	switch(commandBuffer[0]) {
 	case 'q':
