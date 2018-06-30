@@ -142,7 +142,7 @@ public:
 			gptr a = t[0], b = t[1], c = t[2];
 			size = (guint) (a | (((c >> 24) & 0xF) << 32));
 			if((c & 0x3) != flags)
-				LOG_ERROR(Ipc, "A descriptor flags don't match: %u vs expected %u", (uint) (c & 0x3), flags);
+				LOG_ERROR(Ipc, "A descriptor flags don't match: %u vs expected %u (%d + %d * 8 + %d * 12 = %p)", (uint) (c & 0x3), flags, descOffset, xCount, num, (void*)((uint64_t)&t[2] - (uint64_t)ptr));
 			return b | (((((c >> 2) << 4) & 0x70) | ((c >> 28) & 0xF)) << 32);
 		}
 		case 3: { // X

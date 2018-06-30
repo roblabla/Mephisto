@@ -88,7 +88,7 @@ Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 	registerSvc_ret_X0(       0x11, SignalEvent, (ghandle) IX0);
 	registerSvc_ret_X0(       0x12, ClearEvent, (ghandle) IX0);
 	registerSvc_ret_X0(       0x13, MapSharedMemory, (ghandle) IX0, IX1, IX2, IX3);
-	registerSvc_ret_X0_X1(    0x15, CreateTransferMemory, IX0, IX1, IX2);
+	registerSvc_ret_X0_X1(    0x15, CreateTransferMemory, IX1, IX2, IX3);
 	registerSvc_ret_X0(       0x16, CloseHandle, (ghandle) IX0);
 	registerSvc_ret_X0(       0x17, ResetSignal, (ghandle) IX0);
 	registerSvc_ret_X0_X1(    0x18, WaitSynchronization, IX1, IX2, IX3);
@@ -127,7 +127,7 @@ Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 }
 
 tuple<guint, guint> Svc::SetHeapSize(guint size) {
-	LOG_DEBUG(Svc[0x01], "SetHeapSize 0x" LONGFMT, size);
+	LOG_DEBUG(Svc[0x01], "SetHeapSize 0x" LONGFMT " (old: 0x" LONGFMT ")", size, ctu->heapsize);
 	if (ctu->heapsize < size) {
 		ctu->cpu.map(0xaa0000000 + ctu->heapsize, size - ctu->heapsize, UC_PROT_READ | UC_PROT_WRITE);
 	} else if (ctu->heapsize > size) {
@@ -208,6 +208,10 @@ void Svc::ExitProcess(guint exitCode) {
 	// Ensure we freed all the handles!
 	ctu->printUnclosedHandles();
 	ctu->cpu.printMemRegions();
+	if (ctu->hbapi && ctu->loadType == "nro") {
+		char *mapping = (char*)ctu->getMapping(0xbb0000000);
+		printf("- LOG:\n%.*s\n", 0x20000, mapping);
+	}
 	exit((int) exitCode);
 }
 
@@ -293,6 +297,7 @@ tuple<guint, guint> Svc::CreateTransferMemory(gptr addr, guint size, guint perm)
 	LOG_DEBUG(Svc[0x15], "CreateTransferMemory 0x" LONGFMT " 0x" LONGFMT " 0x" LONGFMT, addr, size, perm);
 	auto tm = make_shared<MemoryBlock>(size, perm);
 	tm->addr = addr;
+	//ctu->cpu.unmap(addr, size);
 	return make_tuple(0, ctu->newHandle(tm));
 }
 
@@ -511,9 +516,19 @@ guint Svc::Break(guint X0, guint X1, guint info) {
 guint Svc::OutputDebugString(guint ptr, guint size) {
 	//LOG_DEBUG(Svc[0x27], "OutputDebugString addr=" ADDRFMT " size=" LONGFMT, ptr, size);
 	if(size > 0x2000) {
-		LOG_DEBUG(Svc[0x27], "Debug string is bigger than 0x2000 bytes. Something probably went wrong.");
+		LOG_DEBUG(Svc[0x27], "Debug string is %lx, bigger than 0x2000 bytes. Something probably went wrong.", size);
 	}
 	char *debugStr = (char*) malloc(size + 1);
+	if (debugStr == nullptr) {
+		// break.
+		auto thread = ctu->tm.current();
+		assert(thread != nullptr);
+		ctu->tm.requeue();
+		thread->regs.PC = ctu->cpu.pc();
+		ctu->cpu.stop();
+		ctu->gdbStub._break();
+		return 0;
+	}
 	memset(debugStr, 0, size+1);
 	if(ctu->cpu.readmem(ptr, debugStr, size)) {
 		LOG_DEBUG(Svc[0x27], "Debug String: %s", debugStr);

@@ -207,7 +207,7 @@ static bool pack_addrinfo(const struct addrinfo *ai, uint8_t *buf, int size) {
 		case AF_INET: {
 			struct sockaddr_in *buf_as_sockaddr_in = (struct sockaddr_in*) buf;
 			struct sockaddr_in *sockaddr = (struct sockaddr_in*) ai->ai_addr;
-			buf_as_sockaddr_in->sin_family = sockaddr->sin_family;
+			buf_as_sockaddr_in->sin_family = htons(sockaddr->sin_family); // Put sin_family at the right place, sin_len is 0.
 			buf_as_sockaddr_in->sin_port = htons(sockaddr->sin_port); // I think that this is erroneously byteswapped
 			buf_as_sockaddr_in->sin_addr.s_addr = htonl(sockaddr->sin_addr.s_addr); // this too
 			memset(&buf_as_sockaddr_in->sin_zero, 0, sizeof(buf_as_sockaddr_in->sin_zero));
@@ -261,6 +261,7 @@ static bool unpack_addrinfo(struct addrinfo **res, const uint8_t *buf, int size)
 	memset(ai, 0, sizeof(*ai));
 	
 	if(size < sizeof(ai_packed_header)) {
+		printf("Bail 1\n");
 		goto bail;
 	}
 	memcpy(&ai_packed_header, buf, sizeof(ai_packed_header));
@@ -268,6 +269,7 @@ static bool unpack_addrinfo(struct addrinfo **res, const uint8_t *buf, int size)
 	size-= sizeof(ai_packed_header);
 	
 	if(ntohl(ai_packed_header.magic) != 0xBEEFCAFE) {
+		printf("Bail 2: %x\n", ntohl(ai_packed_header.magic));
 		goto bail;
 	}
 	
@@ -284,13 +286,14 @@ static bool unpack_addrinfo(struct addrinfo **res, const uint8_t *buf, int size)
 	} else {
 		ai->ai_addr = (struct sockaddr*) new uint8_t[ai->ai_addrlen];
 		if(ai->ai_addr == nullptr) {
+			printf("Bail 3\n");
 			goto bail;
 		}
 		switch(ai->ai_family) {
 		case AF_INET: {
 			const struct sockaddr_in *buf_as_sockaddr_in = (const struct sockaddr_in*) buf;
 			struct sockaddr_in *sockaddr = (struct sockaddr_in*) ai->ai_addr;
-			sockaddr->sin_family = buf_as_sockaddr_in->sin_family;
+			sockaddr->sin_family = htons(buf_as_sockaddr_in->sin_family);
 			sockaddr->sin_port = htons(buf_as_sockaddr_in->sin_port); // erroneous byte swapping
 			sockaddr->sin_addr.s_addr = htonl(buf_as_sockaddr_in->sin_addr.s_addr); // again
 			memset(&sockaddr->sin_zero, 0, sizeof(sockaddr->sin_zero));
@@ -298,6 +301,7 @@ static bool unpack_addrinfo(struct addrinfo **res, const uint8_t *buf, int size)
 		}
 		case AF_INET6:
 			//TODO
+			printf("Bail 4\n");
 			goto bail;
 		default:
 			memcpy(ai->ai_addr, buf, ai->ai_addrlen);
@@ -323,6 +327,7 @@ static bool unpack_addrinfo(struct addrinfo **res, const uint8_t *buf, int size)
   
 	if(*((const uint32_t*) buf) == htonl(0xBEEFCAFE)) {
 		if(unpack_addrinfo(&ai->ai_next, buf, size)) {
+			printf("Bail 5\n");
 			goto bail;
 		}
 	}

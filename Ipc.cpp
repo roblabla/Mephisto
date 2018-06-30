@@ -109,6 +109,7 @@ IncomingIpcMessage::IncomingIpcMessage(uint8_t *_ptr, bool isDomainObject) : ptr
 		pos += 4;
 	}
 
+	printf("pos = %d, xCount = %d, aCount = %d, bCount = %d, hasHD = %d, isDomainObject = %d\n", pos, xCount, aCount, bCount, hasHD, isDomainObject);
 	assert(type == 2 || (isDomainObject && domainCommand == 2) || buf[pos] == FOURCC('S', 'F', 'C', 'I'));
 	sfciOffset = pos * 4;
 
@@ -134,13 +135,15 @@ void OutgoingIpcMessage::initialize(uint _moveCount, uint _copyCount, uint dataB
 	if(pos & 3)
 		pos += 4 - (pos & 3);
 	if(isDomainObject) {
+		LOG_DEBUG(IPC, "pos is %d", pos);
 		buf[pos] = moveCount;
 		pos += 4;
 	}
 	realDataOffset = isDomainObject ? moveCount << 2 : 0;
 	auto dataWords = (realDataOffset >> 2) + (dataBytes & 3) ? (dataBytes >> 2) + 1 : (dataBytes >> 2);
-
+	LOG_DEBUG(IPC, "DEBUG: %d >> 2 + %d >> 2 = %d", realDataOffset, dataBytes, dataWords);
 	buf[1] |= 4 + (isDomainObject ? 4 : 0) + 4 + dataWords;
+	LOG_DEBUG(IPC, "Size is %d (actual size is %d)", dataBytes, buf[1]);
  
 	sfcoOffset = pos * 4;
 	buf[pos] = FOURCC('S', 'F', 'C', 'O');

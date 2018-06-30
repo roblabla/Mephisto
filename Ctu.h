@@ -222,11 +222,7 @@ public:
 		void *old_data = mappings[addr];
 		if (old_data != nullptr) {
 			mappings[addr] = nullptr;
-			for (auto mapping : mappings) {
-				if (mapping.second == old_data)
-					return old_data;
-			}
-			free(old_data);
+			return old_data;
 		}
 		return nullptr;
 	}

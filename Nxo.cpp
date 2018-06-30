@@ -129,10 +129,16 @@ guint Kip::load(Ctu &ctu, gptr base, bool relocate) {
 	delete[] text;
 
 	char *ro = kip1_decompress(fp, roff, hdr.section_headers[1].compressed_size, hdr.section_headers[1].out_size);
+	FILE *ro_f = fopen("data.ro", "w");
+	fwrite(ro, 1, hdr.section_headers[1].out_size, ro_f);
+	fclose(ro_f);
 	ctu.cpu.writemem(base + hdr.section_headers[1].out_offset, ro, hdr.section_headers[1].out_size);
 	delete[] ro;
 
 	char *data = kip1_decompress(fp, doff, hdr.section_headers[2].compressed_size, hdr.section_headers[2].out_size);
+	FILE *data_f = fopen("data.data", "w");
+	fwrite(data, 1, hdr.section_headers[2].out_size, data_f);
+	fclose(data_f);
 	ctu.cpu.writemem(base + hdr.section_headers[2].out_offset, data, hdr.section_headers[2].out_size);
 	delete[] data;
 

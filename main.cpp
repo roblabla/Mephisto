@@ -38,7 +38,7 @@ struct Arg: public option::Arg
   }
 };
 
-enum  optionIndex { UNKNOWN, HELP, ENABLE_GDB, PORT, NSO, NRO, KIP, ENABLE_SOCKETS };
+enum  optionIndex { UNKNOWN, HELP, ENABLE_GDB, PORT, NSO, NRO, KIP, ENABLE_SOCKETS, ENABLE_HBABI };
 const option::Descriptor usage[] =
 {
 	{UNKNOWN, 0, "", "",Arg::None, "USAGE: ctu [options] <load-directory>\n\n"
@@ -49,6 +49,7 @@ const option::Descriptor usage[] =
 	{NSO, 0,"","load-nso",Arg::NonEmpty, "  --load-nso  \tLoad an NSO without load directory"},
 	{NRO, 0,"","load-nro",Arg::NonEmpty, "  --load-nro  \tLoad an NRO without load directory (entry point .text+0x00)"},
 	{KIP, 0,"","load-kip",Arg::NonEmpty, "  --load-kip  \tLoad a KIP without load directory"},
+	{ENABLE_HBABI, 0,"","enable-hbabi",Arg::None, "  --enable-hbabi  \tEnable HBABI"},
 	{ENABLE_SOCKETS, 0, "b","enable-sockets",Arg::None, "  -- enable-sockets, -b  \tEnable BSD socket passthrough." },
 	{0,0,nullptr,nullptr,nullptr,nullptr}
 };
@@ -183,6 +184,10 @@ int main(int argc, char **argv) {
 		ctu.gdbStub.enable(options[PORT].count() == 0 ? 24689 : (uint16_t) atoi(options[PORT][0].arg));
 	} else
 		assert(options[PORT].count() == 0);
+
+	if(options[ENABLE_HBABI].count()) {
+		ctu.hbapi = true;
+	}
 
 	if(options[ENABLE_SOCKETS].count()) {
 		ctu.socketsEnabled = true;

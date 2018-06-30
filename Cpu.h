@@ -20,6 +20,7 @@ public:
 	bool mperms(gptr addr, guint size, uint32_t perms);
 	bool map(gptr addr, guint size, uint32_t perms);
 	bool map_ptr(gptr addr, guint size, void *data, uint32_t perms);
+	void protect(gptr addr, guint size, uint32_t perms);
 	bool unmap(gptr addr, guint size);
 	list<tuple<gptr, guint, int>> regions();
 	bool readmem(gptr addr, void *dest, guint size);

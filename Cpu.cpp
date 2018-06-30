@@ -110,7 +110,9 @@ void Cpu::setMmio(Mmio *_mmioHandler) {
 }
 
 void Cpu::exec(size_t insnCount) {
-	CHECKED(uc_emu_start(uc, pc(), TERMADDR + 4, 0, insnCount));
+	auto res = uc_emu_start(uc, pc(), TERMADDR + 4, 0, insnCount);
+	if (!ctu->gdbStub.enabled)
+		CHECKED(res);
 }
 
 void Cpu::stop() {
@@ -133,6 +135,10 @@ bool Cpu::map_ptr(gptr addr, guint size, void *data, uint32_t perms) {
 	return ctu->newMapping(addr, data);
 }
 
+void Cpu::protect(gptr addr, guint size, uint32_t perms) {
+	CHECKED(uc_mem_protect(uc, addr, size, perms));
+}
+
 void Cpu::printMemRegions() {
 	uc_mem_region *regions;
 	uint32_t count;
@@ -146,8 +152,49 @@ void Cpu::printMemRegions() {
 }
 
 bool Cpu::unmap(gptr addr, guint size) {
-	CHECKED(uc_mem_unmap(uc, addr, size));
-	return ctu->deleteMapping(addr) != nullptr;
+	std::cout << "Unmap " << std::hex << addr << " - " << addr + size;
+
+	// First find region, unmap it.
+	uc_mem_region *regions;
+	uint32_t count;
+	gptr region_begin = 0, region_end = 0;
+
+	CHECKED(uc_mem_regions(uc, &regions, &count));
+	list<tuple<gptr, gptr>> temp;
+	int i;
+	for(i = 0; i < count; ++i) {
+		if (regions[i].begin <= addr && addr <= regions[i].end) {
+			assert(regions[i].begin <= addr + size && addr + size <= regions[i].end);
+			region_begin = regions[i].begin;
+			region_end = regions[i].end;
+			break;
+		}
+	}
+	uc_free(regions);
+	if (i == count)
+		return false;
+
+	CHECKED(uc_mem_unmap(uc, region_begin, region_end - region_begin + 1));
+	void *data = ctu->deleteMapping(region_begin);
+	if (data == nullptr)
+		return false;
+
+	if (region_end != addr + size - 1) {
+		void *data2 = malloc(region_end - (addr + size));
+		memcpy(data2, (void*)((size_t)data + (addr - region_begin) + size), region_end - (addr + size));
+		uc_mem_map_ptr(uc, addr + size, region_end - (addr + size) + 1, UC_PROT_READ | UC_PROT_WRITE, data2);
+		ctu->newMapping(addr + size, data2);
+	}
+
+	if (region_begin != addr) {
+		// TODO: Fix perms
+		uc_mem_map_ptr(uc, region_begin, addr - region_begin, UC_PROT_READ | UC_PROT_WRITE, data);
+		ctu->newMapping(region_begin, data);
+	} else {
+		free(data);
+	}
+
+	return true;
 }
 
 list<tuple<gptr, gptr, int>> Cpu::regions() {
@@ -366,11 +413,13 @@ bool Cpu::unmappedHook(uc_mem_type type, gptr addr, int size, guint value) {
 		if(thread == nullptr)
 			return false;
 		ctu->tm.requeue();
+		thread->regs.PC = this_pc;
 		ctu->gdbStub._break(false);
-		if(type == UC_MEM_FETCH_PROT || type == UC_MEM_FETCH_UNMAPPED)
+		if(type == UC_MEM_FETCH_PROT || type == UC_MEM_FETCH_UNMAPPED) {
 			pc(TERMADDR);
-		else
+		} else {
 			stop();
+		}
 		return true;
 	}
 	return false;
