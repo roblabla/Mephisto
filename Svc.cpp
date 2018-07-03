@@ -120,6 +120,7 @@ Svc::Svc(Ctu *_ctu) : ctu(_ctu) {
 	registerSvc_ret_X0(       0x57, AttachDeviceAddressSpace, IX0, (ghandle) IX1);
 	registerSvc_ret_X0(       0x59, MapDeviceAddressSpaceByForce, (ghandle) IX0, (ghandle) IX1, IX2, IX3, IX4, IX5);
 	registerSvc_ret_X0(       0x5c, UnmapDeviceAddressSpace, IX0, (ghandle) IX1, IX2, IX3, IX4);
+	registerSvc_ret_X0_X1(    0x65, GetProcessList, IX1, IX2);
 	registerSvc_ret_X0(       0x74, MapProcessMemory, IX0, (ghandle) IX1, IX2, IX3);
 	registerSvc_ret_X0(       0x75, UnmapProcessMemory, IX0, (ghandle) IX1, IX2, IX3);
 	registerSvc_ret_X0(       0x77, MapProcessCodeMemory, (ghandle) IX0, IX1, IX2, IX3);
@@ -212,7 +213,11 @@ void Svc::ExitProcess(guint exitCode) {
 		char *mapping = (char*)ctu->getMapping(0xbb0000000);
 		printf("- LOG:\n%.*s\n", 0x20000, mapping);
 	}
-	exit((int) exitCode);
+	auto thread = ctu->tm.current();
+	ctu->cpu.storeRegs(thread->regs);
+	ctu->gdbStub._break();
+	ctu->cpu.stop();
+	//exit((int) exitCode);
 }
 
 tuple<guint, guint> Svc::CreateThread(guint pc, guint x0, guint sp, guint prio, guint proc) {
@@ -680,6 +685,13 @@ guint Svc::UnmapDeviceAddressSpace(guint unk0, ghandle phandle, gptr maddr, guin
 	LOG_DEBUG(Svc[0x5c], "UnmapDeviceAddressSpace");
 	UNIMPLEMENTED(0x5c);
 	return 0;
+}
+
+tuple<guint, guint> Svc::GetProcessList(gptr pids_out_ptr, guint pidsd_out_size) {
+	LOG_DEBUG(Svc[0x65], "GetProcessList");
+	int set0 = 0;
+	ctu->cpu.writemem(pids_out_ptr, &set0, sizeof(set0));
+	return make_tuple(0x0, 1);
 }
 
 guint Svc::MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size) {

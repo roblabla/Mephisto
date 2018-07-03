@@ -73,6 +73,7 @@ private:
 	guint AttachDeviceAddressSpace(guint dev, ghandle handle); // 0x57
 	guint MapDeviceAddressSpaceByForce(ghandle handle, ghandle phandle, gptr vaddr, guint size, gptr saddr, guint perm); // 0x59
 	guint UnmapDeviceAddressSpace(guint unk0, ghandle phandle, gptr maddr, guint size, gptr paddr); // 0x5c
+	tuple<guint, guint> GetProcessList(gptr pids_out_ptr, guint pidsd_out_size); // 0x65
 	guint MapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size); // 0x74
 	guint UnmapProcessMemory(gptr dstaddr, ghandle handle, gptr srcaddr, guint size); // 0x75
 	guint MapProcessCodeMemory(ghandle handle, gptr dstaddr, gptr srcaddr, guint size); // 0x77
